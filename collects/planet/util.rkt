@@ -1,12 +1,12 @@
 #lang scheme
 
-(require "config.ss"
-         "planet-archives.ss"
+(require "config.rkt"
+         "planet-archives.rkt"
          
-         "private/planet-shared.ss"
-         "private/linkage.ss"
+         "private/planet-shared.rkt"
+         "private/linkage.rkt"
          
-         "resolver.ss"
+         "resolver.rkt"
          net/url
          xml/xml
          
@@ -129,7 +129,7 @@
 
 ;; erase-metadata : pkg -> void
 ;; clears out any references to the given package in planet's metadata files
-;; (i.e., linkage and info.ss cache; not hard links which are not considered metadata)
+;; (i.e., linkage and info.rkt cache; not hard links which are not considered metadata)
 (define (erase-metadata p)
   (remove-infodomain-entries (pkg-path p))
   (remove-linkage-to! p))
@@ -140,7 +140,7 @@
 ;; remove-infodomain-entries : path -> void
 (define (remove-infodomain-entries path)
   (let* ([pathbytes (path->bytes path)]
-         [cache-file (build-path (PLANET-DIR) "cache.ss")])
+         [cache-file (build-path (PLANET-DIR) "cache.rktd")])
     (when (file-exists? cache-file)
       (let ([cache-lines (with-input-from-file cache-file read)])
         (call-with-output-file cache-file
@@ -289,7 +289,7 @@
            [_ ((dynamic-require 'scribble/xref 'xref-transfer-info) renderer ci xref)]
            [ri (send renderer resolve (list doc) (list dest-dir) ci)])
       (send renderer set-external-tag-path
-            "/servlets/doc-search.ss")
+            "/servlets/doc-search.rkt")
       (send renderer render 
             (list doc) 
             (list (if multi-page? 
@@ -304,7 +304,7 @@
 (define SCRIBBLE-DOCUMENT-DIR "planet-docs/")
 
 ;; scribble-entry? : Any -> Boolean
-;; Recognizes valid list entries in info.ss's scribblings field.
+;; Recognizes valid list entries in info.rkt's scribblings field.
 (define scribble-entry?
   (match-lambda
     [(or (list (? string?))
@@ -315,14 +315,14 @@
     [_ #f]))
 
 ;; scribble-flags? : Any -> Boolean
-;; Recognizes a list of flags from an info.ss scribblings entry.
+;; Recognizes a list of flags from an info.rkt scribblings entry.
 (define scribble-flags?
   (match-lambda
     [(list (? symbol?) ...) #t]
     [_ #f]))
 
 ;; scribble-category : Any -> Boolean
-;; Recognizes a category descriptor from an info.ss scribblings entry.
+;; Recognizes a category descriptor from an info.rkt scribblings entry.
 (define scribble-category?
   (match-lambda
     [(or (list (? symbol?))
@@ -330,12 +330,12 @@
     [_ #f]))
 
 ;; scribble-entry-file : ScribbleEntry -> String
-;; Produces the filename of an info.ss scribblings entry.
+;; Produces the filename of an info.rkt scribblings entry.
 (define scribble-entry-file
   (match-lambda [(list file _ ...) file]))
 
 ;; scribble-entry-flags : ScribbleEntry -> (Listof Symbol)
-;; Produces the list of flags from an info.ss scribblings entry.
+;; Produces the list of flags from an info.rkt scribblings entry.
 (define scribble-entry-flags
   (match-lambda
     [(list _) null]
@@ -361,16 +361,16 @@
                [warnings '()]
                [critical-errors '()])
            
-           (define info.ss
+           (define info.rkt
              (let ([real-info
-                    (check-info.ss-sanity 
+                    (check-info.rkt-sanity 
                      dir
                      (λ (msg . args) (set! announcements (cons (apply format msg args) announcements)))
                      (λ (bad) (set! warnings (cons bad warnings)))
                      (λ (err) (set! critical-errors (cons err critical-errors))))])
-               (or real-info (λ (x [y (λ () (error 'info.ss (format "undefined field: ~a" x)))]) (y)))))
+               (or real-info (λ (x [y (λ () (error 'info.rkt (format "undefined field: ~a" x)))]) (y)))))
 
-           (let ([scribble-files (info.ss 'scribblings (λ () '()))])
+           (let ([scribble-files (info.rkt 'scribblings (λ () '()))])
              
              (define (outdir file-str)
                (let* ([filename (file-name-from-path file-str)]
@@ -378,7 +378,7 @@
                  (build-path SCRIBBLE-DOCUMENT-DIR (bytes->path (cadr pathname)))))
              
              (when (and (build-scribble-docs?)
-                        (file-exists? (build-path (collection-path "setup") "scribble.ss")))
+                        (file-exists? (build-path (collection-path "setup") "scribble.rkt")))
                (with-handlers ([exn:fail? 
                                 (lambda (e)
                                   (set! critical-errors
@@ -573,61 +573,61 @@
            (finished (void))))))
     (error 'display-archived-plt-file "The given file was not found in the given package")))
 
-;; check-info.ss-sanity : path (string -> void) (string -> void) (string -> void) -> info.ss-fn | #f
-;; gets all the info.ss fields that planet will use (using the info.ss file
+;; check-info.rkt-sanity : path (string -> void) (string -> void) (string -> void) -> info.rkt-fn | #f
+;; gets all the info.rkt fields that planet will use (using the info.rkt file
 ;; from the current directory) and calls the announce, warn, and fail functions with strings
-;; that describe how PLaneT sees the info.ss file. NOTA BENE: if this function calls fail, it may 
+;; that describe how PLaneT sees the info.rkt file. NOTA BENE: if this function calls fail, it may 
 ;; also warn on the same field, and the warning may not make sense. This is based on the
 ;; assumption that errors will be turned into some kind of critical failure that obliterates
 ;; all the other information produced.
-(define (check-info.ss-sanity dir announce warn fail)
+(define (check-info.rkt-sanity dir announce warn fail)
   (with-handlers ([exn:fail:read? 
                    (λ (e) 
-                     (fail (format "Package has an unreadable info.ss file. ~a" (render-exn e))) 
+                     (fail (format "Package has an unreadable info.rkt file. ~a" (render-exn e))) 
                      #f)]
                   [exn:fail:syntax? 
                    (λ (e) 
-                     (fail (format "Package's info.ss has an syntactically ill-formed info.ss file: ~a" (render-exn e)))
+                     (fail (format "Package's info.rkt has an syntactically ill-formed info.rkt file: ~a" (render-exn e)))
                      #f)])
     (let ([i* (get-info/full dir)])
       (cond
         [(not i*) 
-         (warn "Package has no info.ss file. This means it will not have a description or documentation on the PLaneT web site.")]
+         (warn "Package has no info.rkt file. This means it will not have a description or documentation on the PLaneT web site.")]
         [else
          (let ([i (λ (field) (i* field (λ () #f)))])
            (checkinfo i fail
                       [name     ; field name 
                        string?  ; check
                        (announce "Name: ~a\n" name)  ; success action
-                       (warn "Package's info.ss file has no name field.") ;failure action
+                       (warn "Package's info.rkt file has no name field.") ;failure action
                        ]
                       [blurb 
                        (λ (b) (and (list? b) (andmap xexpr? b)))
                        (announce "Package blurb: ~s\n" blurb)
                        (unless blurb
-                         (warn "Package's info.ss does not contain a blurb field. Without a blurb field, the package will have no description on planet.plt-scheme.org."))]
+                         (warn "Package's info.rkt does not contain a blurb field. Without a blurb field, the package will have no description on planet.plt-scheme.org."))]
                       [release-notes 
                        (λ (b) (and (list? b) (andmap xexpr? b)))
                        (announce "Release notes: ~s\n" release-notes)
                        (unless release-notes
-                         (warn "Package's info.ss does not contain a release-notes field. Without a release-notes field, the package will not have any listed release information on planet.plt-scheme.org beyond the contents of the blurb field."))]
+                         (warn "Package's info.rkt does not contain a release-notes field. Without a release-notes field, the package will not have any listed release information on planet.plt-scheme.org beyond the contents of the blurb field."))]
                       [categories
                        (λ (s) (and (list? s) (andmap symbol? s)))
                        (cond
                          [(ormap illegal-category categories)
                           =>
                           (λ (bad-cat)
-                            (fail (format "Package's info.ss file contains illegal category \"~a\". The legal categories are: ~a\n" 
+                            (fail (format "Package's info.rkt file contains illegal category \"~a\". The legal categories are: ~a\n" 
                                           bad-cat
                                           legal-categories)))]
                          [else (announce "Categories: ~a\n" categories)])
                        (unless categories
-                         (warn "Package's info.ss file does not contain a category listing. It will be placed in the Miscellaneous category."))]
+                         (warn "Package's info.rkt file does not contain a category listing. It will be placed in the Miscellaneous category."))]
                       [doc.txt
                        string?
                        (announce "doc.txt file: ~a\n" doc.txt)
                        (when doc.txt
-                         (warn "Package's info.ss contains a doc.txt entry, which is now considered deprecated. The preferred method of documentation for PLaneT packages is now Scribble (see the Scribble documentation included in the PLT Scheme distribution for more information)."))]
+                         (warn "Package's info.rkt contains a doc.txt entry, which is now considered deprecated. The preferred method of documentation for PLaneT packages is now Scribble (see the Scribble documentation included in the PLT Scheme distribution for more information)."))]
                       [html-docs
                        (lambda (s) (and (list? s) (andmap string? s)))
                        (warn "Package specifies an html-docs entry. The preferred method of documentation for PLaneT packages is now Scribble (see the Scribble documentation included in the PLT Scheme distribution for more information).")]
@@ -644,23 +644,23 @@
                          [(url-string? homepage)
                           (announce "Home page: ~a\n" homepage)]
                          [else
-                          (fail (format "The value of the package's info.ss homepage field, ~s, does not appear to be a legal URL." homepage))])]
+                          (fail (format "The value of the package's info.rkt homepage field, ~s, does not appear to be a legal URL." homepage))])]
                       [primary-file
                        (λ (x) (or (string? x) (and (list? x) (andmap string? x))))
                        (begin
                          (cond
                            [(string? primary-file) 
                             (unless (file-in-current-directory? primary-file)
-                              (warn (format "Package's info.ss primary-file field is ~s, a file that does not exist in the package." 
+                              (warn (format "Package's info.rkt primary-file field is ~s, a file that does not exist in the package." 
                                             primary-file)))]
                            [(pair? primary-file)
                             (let ([bad-files (filter (λ (f) (not (file-in-current-directory? f))) primary-file)])
                               (unless (null? bad-files)
-                                (warn (format "Package's info.ss primary-file field is ~s, which contains non-existant files ~s."
+                                (warn (format "Package's info.rkt primary-file field is ~s, which contains non-existant files ~s."
                                               primary-file bad-files))))])
                          (announce "Primary file: ~a\n" primary-file))
                        (unless primary-file
-                         (warn "Package's info.ss does not contain a primary-file field. The package's listing on planet.plt-scheme.org will not have a valid require line for your package."))]
+                         (warn "Package's info.rkt does not contain a primary-file field. The package's listing on planet.plt-scheme.org will not have a valid require line for your package."))]
                       [required-core-version 
                        core-version?
                        (announce "Required mzscheme version: ~a\n" required-core-version)]
@@ -668,7 +668,7 @@
                        (λ (x) (and (list? x) 
                                    (srfi1:lset<= equal? x '("3xx" "4.x"))))
                        (announce "Repositories: ~s\n" repositories)
-                       (warn "Package's info.ss does not contain a repositories field. The package will be listed in all repositories by default.")]
+                       (warn "Package's info.rkt does not contain a repositories field. The package will be listed in all repositories by default.")]
                       [version
                        string?
                        (announce "Version description: ~a\n" version)]))])
@@ -715,7 +715,7 @@
        (string->mz-version s)))
 
 ;; checkinfo: syntax
-;; given an info.ss function, a failure function, and a bunch of fields to check,
+;; given an info.rkt function, a failure function, and a bunch of fields to check,
 ;; goes through the checklist calling either the success or the failure branch
 ;; of each check as appropriate
 (define-syntax checkinfo
@@ -739,7 +739,7 @@
             (let ([checked (check id)])
               (unless checked
                 on-fail
-                (fail (format "Package's info.ss contained a malformed ~a field." 'id)))
+                (fail (format "Package's info.rkt contained a malformed ~a field." 'id)))
               on-success)]
            [else on-fail])))
       fn fail clauses ...)]))
