@@ -11,11 +11,12 @@ PLANNED FEATURES:
            (only mzlib/list sort)
            net/url
            mzlib/match
+           raco/command-name
            
-           "config.ss"
-           "private/planet-shared.ss"
-           "private/command.ss"
-           "util.ss") 
+           "config.rkt"
+           "private/planet-shared.rkt"
+           "private/command.rkt"
+           "util.rkt") 
   
   (define erase? (make-parameter #f))
   (define displayer (make-parameter (λ () (show-installed-packages))))
@@ -27,13 +28,13 @@ PLANNED FEATURES:
     (planet-logging-to-stdout #t)
     
     (svn-style-command-line
-     #:program "planet"
+     #:program (short-program+command-name)
      #:argv (current-command-line-arguments)
      "PLT Scheme PLaneT command-line tool. Provides commands to help you manipulate your local planet cache."
      ["create" "create a PLaneT archive from a directory"
       "\nCreate a PLaneT archive in the current directory whose contents are the directory <path>."
       #:once-each
-      [("-f" "--force") ("force a package to be created even if its info.ss file contains"
+      [("-f" "--force") ("force a package to be created even if its info.rkt file contains"
                          "errors.")
        (force-package-building? #t)]
       #:args (path)
@@ -41,7 +42,7 @@ PLANNED FEATURES:
      ["install" "download and install a given package"
       "
 Download and install the package that
-   (require (planet \"file.ss\" (<owner> <pkg> <maj> <min>)))
+   (require (planet \"file.rkt\" (<owner> <pkg> <maj> <min>)))
 would install"
       #:args (owner pkg maj min)
       (begin
