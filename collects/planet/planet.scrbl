@@ -567,15 +567,48 @@ functionality exposed by @seclink["cmdline"]{the @exec{raco planet} command-line
 also available programmatically through this library.
 
 @defproc[(download/install-pkg [owner string?]
-			       [pkg string?]
+			       [pkg (and/c string? #rx"[.]plt")]
 			       [maj natural-number/c]
 			       [min natural-number/c])
          (or/c pkg? #f)]{
 Downloads and installs the package specifed by the given owner name,
 package name, major and minor version number. Returns false if no such
 package is available; otherwise returns a package structure for the
-installed package.}
+installed package.
 
+The @racket[pkg] argument must end with @racket[".plt"].
+}
+
+@defproc[(install-pkg [pkg-spec pkg-spec?]
+                      [file path-string?]
+                      [maj natural-number/c]
+                      [min natural-number/c])
+         (or/c pkg-spec? #f)]{
+ Installs the package represented by the arguments, using
+ the @racket[pkg-spec] argument to find the path and name of
+ the package to install.
+ 
+ See @racket[get-package-spec] to build a @racket[pkg-spec] argument.
+ 
+ Returns a new @racket[pkg-spec?] corresponding to the package
+ that was actually installed.
+}
+
+@defproc[(get-package-spec [owner string?]
+                           [pkg (and/c string? #rx"[.]plt")]
+                           [maj (or/c #f natural-number/c) #f]
+                           [min (or/c #f natural-number/c) #f])
+         pkg-spec?]{
+  Builds a @racket[pkg-spec?] corresponding to the package specified by 
+  @racket[owner], @racket[pkg], @racket[maj], and @racket[min].
+  
+  The @racket[pkg] argument must end with the string @racket[".plt"].
+}
+
+@defproc[(pkg-spec? [v any/c]) boolean?]{
+  Recognizes the result of @racket[get-package-spec] (and @racket[install-pkg]).
+}
+                   
 @defparam[current-cache-contents contents
           (listof
            (list/c string? 
@@ -614,11 +647,14 @@ Unpacks the PLaneT archive with the given filename, placing its contents
 into the given directory (creating that path if necessary).}
 
 @defproc[(remove-pkg [owner string?]
-		     [pkg   string?]
+		     [pkg   (and/c string? #rx"[.]plt")]
 		     [maj   natural-number/c]
 		     [min   natural-number/c])
 	 any]{
-Removes the specified package from the local planet cache.}
+Removes the specified package from the local planet cache.
+
+The @racket[pkg] argument must end with the string @racket[".plt"].
+}
 
 @defproc[(display-plt-file-structure [plt-file (or/c path-string? path?)])
          any]{
@@ -636,7 +672,7 @@ Removes the entire linkage table from the system, which will force all
 modules to relink themselves to PLaneT modules the next time they run.}
 
 @defproc[(add-hard-link [owner string?]
-			[pkg   string?]
+			[pkg   (and/c string? #rx"[.]plt$")]
 			[maj   natural-number/c]
 			[min   natural-number/c]
 			[dir   path?])
@@ -649,14 +685,20 @@ development; users only interested in using PLaneT packages
 available online should not need to create any development links.
 
 If the specified package already has a development link, this function
-first removes the old link and then adds the new one.}
+first removes the old link and then adds the new one.
+
+The @racket[pkg] argument must end with the string @racket[".plt"].
+}
 
 @defproc[(remove-hard-link [owner string?]
-	 		   [pkg   string?]
+	 		   [pkg   (and/c string? #rx"[.]plt")]
 			   [maj   natural-number/c]
 			   [min   natural-number/c])
  	 any]{
-Removes any hard link that may be associated with the given package.}
+Removes any hard link that may be associated with the given package.
+
+The @racket[pkg] argument must end with the string @racket[".plt"].
+}
 
 @defproc[(resolve-planet-path [spec quoted-planet-require-spec?])
 	 path?]{
@@ -692,7 +734,7 @@ produces a list corresponding to its name and version, exactly like
 }
 
 @defproc[(exn:fail:planet? [val any/c]) boolean?]{
-  Returns @racket[#t] if @racket[val] is                                                   
+  Returns @racket[#t] if @racket[val] is an exception indicating a planet-specific failure.
 }
 
 @subsection{Terse Status Updates}
@@ -708,19 +750,33 @@ is saved in the namespace, making the listening and information producing
 namespace-specific.
 
 @defproc[(planet-terse-register
-          [proc (-> (or/c 'download 'install 'finish) string? any/c)]
-          [namespace namespace? (current-namespace)]) void?]{
+          [proc (-> (or/c 'download 'install 'docs-build 'finish)
+                    string?
+                    any/c)])
+         void?]{
 Registers @racket[proc] as a function to be called when
-@racket[planet-terse-log] is called with a matching namespace argument.
- Note that @racket[proc] is called 
+@racket[planet-terse-log] is called.
+
+Note that @racket[proc] is called 
 asynchronously (ie, on some thread other than the one calling @racket[planet-terse-register]).
 }
 
 @defproc[(planet-terse-log [id (or/c 'download 'install 'finish)]
-                           [msg string?]
-                           [namespace namespace? (current-namespace)]) void?]{
-  This function is called by PLaneT to announce when things are happening.
-The namespace passed along is used to identify the procs to notify.
+                           [msg string?]) void?]{
+This function is called by PLaneT to announce when things are happening. See also
+@racket[planet-terse-set-key].
+}
+
+@defproc[(planet-terse-set-key [key any/c]) void?]{
+  This sets a @seclink["threadcells" #:doc '(lib "scribblings/reference/reference.scrbl")]{thread cell}
+  to the value of @racket[key].
+  The value of the thread cell is used as an index into a table to determine which
+  of the functions passed to @racket[planet-terse-register] to call when 
+  @racket[planet-terse-log] is called.
+  
+  The table holding the key uses ephemerons and a weak hash table to ensure that
+  when the @racket[key] is unreachable, then the procedures passed to @racket[planet-terse-log]
+  cannot be reached through the table.
 }
 
 @section{Developing Packages for PLaneT}
