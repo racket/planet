@@ -21,7 +21,14 @@
    (build-path tmp-dir sub "info.rkt")
    (lambda (o)
      (display (~a "#lang info\n(define planet-info-domain-test " (~s sub) ")\n")
-              o))))
+              o)
+     (fprintf o "~s\n" '(define name "info domain test"))
+     (fprintf o "~s\n" '(define blurb '()))
+     (fprintf o "~s\n" '(define release-notes '()))
+     (fprintf o "~s\n" '(define categories '(misc)))
+     (fprintf o "~s\n" '(define scribblings '()))
+     (fprintf o "~s\n" '(define primary-file '()))
+     (fprintf o "~s\n" '(define repositories '("4.x"))))))
 
 (add-info "p1")
 (add-info "p2")
@@ -61,3 +68,4 @@
 (unlink-one "p2")
 
 (delete-directory/files tmp-dir)
+
