@@ -317,14 +317,20 @@ using 'system' to call out to the tool and then reading its results, etc.
 ;; main
 ;;
 
-(fetch-vs-url)
-(do-install "without")
-(do-remove)
-(do-install "with")
-(do-remove)
-(do-fileinject)
-(do-structure)
-(do-create)
+(define tmp-dir (make-temporary-file "planet-~a" 'directory))
 
-(delete-file (list-ref test-connection-spec 1))
+(parameterize ([current-directory tmp-dir])
+  (fetch-vs-url)
+  (do-install "without")
+  (do-remove)
+  (do-install "with")
+  (do-remove)
+  (do-fileinject)
+  (do-structure)
+  (do-create)
+
+  (delete-file (list-ref test-connection-spec 1)))
+
+(delete-directory tmp-dir)
+
 (printf "Finished tests\n")

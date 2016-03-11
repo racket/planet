@@ -64,7 +64,7 @@
   (parameterize ([current-output-port out]
                  [current-error-port out])
     (system* (path->string raco-bin-path)
-             "setup" "-xin")))
+             "setup" "--avoid-main" "-xin")))
 
 ;; make sure all of the output has appeared
 (close-output-port out)
