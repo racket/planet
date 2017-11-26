@@ -47,8 +47,8 @@ using 'system' to call out to the tool and then reading its results, etc.
     (error 'cmdline-tool.rkt 
            (string-append 
             "please clear out all planet packages before running this test.\n"
-            "============================================================\n~a" 
-            result))))
+            "============================================================\n~a")
+           result)))
   
 (when (file-exists? test-connection.plt-cache)
   (delete-file test-connection.plt-cache))
