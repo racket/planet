@@ -13,15 +13,17 @@ using 'system' to call out to the tool and then reading its results, etc.
 
 (require racket/system
          planet/config
-         net/url)
+         net/url
+         compiler/find-exe)
 
 (define debug? #f)
 
 (define raco-bin-path
-  (simplify-path (build-path (collection-path "racket") 'up 'up  
-                             (if (eq? (system-type) 'windows)
-                                 "raco.exe"
-                                 (build-path "bin" "raco")))))
+  (let-values ([(base name dir?) (split-path (find-exe))])
+    (simplify-path (build-path base
+                               (if (eq? (system-type) 'windows)
+                                   "raco.exe"
+                                   "raco")))))
 
 (define test-connection-spec '("planet" "test-connection.plt" "1" "0"))
 (define test-connection.plt-cache
