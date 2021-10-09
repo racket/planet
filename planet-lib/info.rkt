@@ -6,3 +6,6 @@
 (define pkg-desc "implementation (no documentation) part of \"planet\"")
 
 (define pkg-authors '(mflatt robby))
+
+(define license
+  '(Apache-2.0 OR MIT))
