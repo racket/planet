@@ -12,3 +12,6 @@
 (define build-deps '("racket-doc"
                      "scribble-doc"))
 (define update-implies '("planet-lib"))
+
+(define license
+  '(Apache-2.0 OR MIT))

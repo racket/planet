@@ -8,3 +8,6 @@
 (define pkg-desc "Legacy support for automatic package distribution")
 
 (define pkg-authors '(mflatt robby))
+
+(define license
+  '(Apache-2.0 OR MIT))
